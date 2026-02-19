@@ -101,6 +101,3 @@ Switch from random data to streaming real-world sensor logs.
 ## 📄 License
 
 This project is open-source and available under the [MIT License](LICENSE).
-
----
-Developed with clean code, modular architecture, and performance in mind.
