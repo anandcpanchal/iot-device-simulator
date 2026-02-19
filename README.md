@@ -69,7 +69,27 @@ docker compose up --build
    - Use the `timestamp` type for auto-generated ISO times.
 3. **Control Simulation**: Use the **Start/Stop** buttons on each device card to toggle data publishing.
 4. **Monitor Messages**: If a "Subscribe Topic" is configured, received messages will appear directly on the device card.
-5. **CSV Playback**: Click "CSV" on a card to upload a file and switch the device to playback mode.
+### 📊 CSV Playback Mode
+
+Switch from random data to streaming real-world sensor logs.
+
+1. **Prepare your CSV**:
+   The simulator treats each row as a message. Headers are used as JSON keys.
+   ```csv
+   temperature,humidity,status
+   22.5,45.0,NORMAL
+   23.1,44.8,WARNING
+   ```
+
+2. **Upload & Activate**:
+   - **Web UI**: Click the **CSV** button on a device card to upload your file. The device mode will automatically switch to `CSV_PLAYBACK`.
+   - **API**:
+     ```bash
+     curl -X POST "http://localhost:8000/api/devices/{uuid}/upload-csv" \
+          -F "file=@your_data.csv"
+     ```
+
+3. **Looping**: By default, the simulator will restart from the first row after reaching the end of the file. This can be toggled in the device settings.
 
 ## 📂 Project Structure
 
