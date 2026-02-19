@@ -1,6 +1,6 @@
 # IoT Device Simulator 🌐
 
-A lightweight, highly configurable IoT device simulation platform. This tool allows developers to simulate thousands of IoT devices publishing data via MQTT with customizable payloads, intervals, and data types, while also supporting command-and-control through incoming MQTT topics.
+A lightweight, highly configurable IoT device simulation platform designed to serve as a companion for the **[rust-mqtt-ingestor](https://github.com/anandcpanchal/rust-mqtt-ingestor)** project. This tool allows developers to simulate thousands of IoT devices publishing data via MQTT with customizable payloads, intervals, and data types, facilitating end-to-end testing of data ingestion pipelines.
 
 ## ✨ Features
 
@@ -97,6 +97,10 @@ Switch from random data to streaming real-world sensor logs.
 - `static/`: Frontend assets (Dashboard UI).
 - `data/`: SQLite database and local CSV storage.
 - `docker-compose.yml`: Local infrastructure setup.
+
+## 📄 License
+
+This project is open-source and available under the [MIT License](LICENSE).
 
 ---
 Developed with clean code, modular architecture, and performance in mind.
