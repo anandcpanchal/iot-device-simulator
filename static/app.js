@@ -61,6 +61,7 @@ function renderDevices() {
             : `<button onclick="controlDevice('${device.uuid}', 'stop')">Stop</button>`
         }
                 <button onclick="openEditModal('${device.uuid}')">Edit</button>
+                <button onclick="duplicateDevice('${device.uuid}')">Duplicate</button>
                 <button onclick="deleteDevice('${device.uuid}')" class="danger">Delete</button>
                 <button onclick="uploadCsvPrompt('${device.uuid}')">CSV</button>
             </div>
@@ -77,6 +78,43 @@ function renderDevices() {
             ` : ''}
         </div>
     `).join('');
+}
+
+async function duplicateDevice(uuid) {
+    try {
+        const res = await fetch(`${API_URL}/devices/${uuid}`);
+        if (!res.ok) throw new Error("Failed to fetch original device");
+        const original = await res.json();
+
+        const newUuid = crypto.randomUUID();
+        const duplicate = {
+            ...original,
+            uuid: newUuid,
+            name: `${original.name} (Copy)`,
+            status: 'STOPPED', // Always start duplicated device as stopped
+            params: (original.params || []).map(p => ({
+                ...p,
+                id: undefined, // Let DB generate new ID
+                device_uuid: newUuid
+            }))
+        };
+
+        const createRes = await fetch(`${API_URL}/devices`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(duplicate)
+        });
+
+        if (!createRes.ok) {
+            const err = await createRes.json();
+            throw new Error(err.detail || "Failed to create duplicate");
+        }
+
+        fetchDevices();
+    } catch (err) {
+        console.error(err);
+        alert(`Error: ${err.message}`);
+    }
 }
 
 async function controlDevice(uuid, action) {

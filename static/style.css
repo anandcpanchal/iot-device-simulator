@@ -165,9 +165,25 @@ main {
 
 .device-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     border-top: 1px solid var(--border);
     padding-top: 0.75rem;
+}
+
+.device-actions button {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.75rem;
+    flex: 1 1 calc(50% - 0.5rem);
+    /* Force 2 per row */
+    min-width: 80px;
+    margin: 0;
+    text-align: center;
+}
+
+/* Primary action (Start/Stop) takes full width */
+.device-actions button:first-child {
+    flex: 1 1 100%;
 }
 
 .modal {

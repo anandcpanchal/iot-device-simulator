@@ -63,6 +63,7 @@ class SimulationEngine:
         self.device_params: Dict[str, List[Dict]] = {} # UUID -> List of Params
         self.csv_players: Dict[str, CsvPlayer] = {} # UUID -> CsvPlayer instance
         self.last_publish_times: Dict[str, float] = {} # UUID -> timestamp
+        self.device_sequences: Dict[str, int] = {} # UUID -> incremental sequence
         
         # Listening
         self.topic_map: Dict[str, List[str]] = {} # Topic -> List of UUIDs
@@ -208,10 +209,15 @@ class SimulationEngine:
         now = datetime.now(timezone.utc)
         iso_now = now.strftime("%Y-%m-%dT%H:%M:%SZ")
         
+        # Incremental sequence
+        if uuid not in self.device_sequences:
+            self.device_sequences[uuid] = 0
+        self.device_sequences[uuid] += 1
+        
         payload = {
-            "uuid": uuid,
-            "timestamp": iso_now,
-            "data": {}
+            "device_id": device['name'],
+            "time": iso_now,
+            "sequence_id": self.device_sequences[uuid]
         }
         
         try:
@@ -231,16 +237,16 @@ class SimulationEngine:
                         val = p.get('string_value', "")
                     
                     if val is not None:
-                        payload['data'][p['param_name']] = val
+                        payload[p['param_name']] = val
                          
             elif device['mode'] == 'CSV_PLAYBACK':
                 player = self.csv_players.get(uuid)
                 if player:
                     row = player.next_row()
                     if row:
-                        payload['data'] = row
+                        payload.update(row)
                     else:
-                        payload['data'] = {"status": "end_of_file"}
+                        payload["status"] = "end_of_file"
                 else:
                     payload['data'] = {"error": "csv_reader_not_ready"}
                 
