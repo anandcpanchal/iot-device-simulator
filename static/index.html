@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Device Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <h1>IoT Device Simulator</h1>
+        <div class="controls">
+            <button onclick="startAll()">Start All</button>
+            <button onclick="stopAll()">Stop All</button>
+            <button class="primary" onclick="openAddModal()">+ Add Device</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-value" id="statsTotal">0</div>
+                <div class="stat-label">Total Devices</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statsRunning">0</div>
+                <div class="stat-label">Running</div>
+            </div>
+        </div>
+
+        <div class="device-grid" id="deviceGrid">
+            <!-- Devices will be injected here -->
+        </div>
+    </main>
+
+    <!-- Add Device Modal -->
+    <div class="modal" id="addDeviceModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add New Device</h2>
+            <form id="deviceForm">
+                <div class="form-group">
+                    <label>Device UUID (Auto-generated)</label>
+                    <input type="text" name="uuid" id="deviceUuidInput" readonly
+                        style="background: #f1f5f9; cursor: not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label>Device Name</label>
+                    <input type="text" name="name" required placeholder="e.g. Sensor-01">
+                </div>
+                <div class="form-group">
+                    <label>Publish Topic</label>
+                    <input type="text" name="publish_topic" required placeholder="e.g. sensors/data">
+                </div>
+                <div class="form-group">
+                    <label>Subscribe Topic (Optional)</label>
+                    <input type="text" name="subscribe_topic" placeholder="e.g. commands/sensor-01">
+                </div>
+                <div class="form-group">
+                    <label>Interval (ms)</label>
+                    <input type="number" name="interval_ms" value="1000" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Telemetry Parameters (Random Mode)</label>
+                    <button type="button" onclick="addParam()" style="width: 100%; margin-bottom: 0.5rem;">+ Add
+                        Parameter</button>
+                    <div id="paramsContainer"></div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="primary" id="submitBtn" style="flex: 1">Create Device</button>
+                    <button type="button" onclick="closeAddModal()" style="flex: 1">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
