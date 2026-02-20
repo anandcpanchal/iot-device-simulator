@@ -19,8 +19,33 @@ const submitBtn = document.getElementById('submitBtn');
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     fetchDevices();
-    setInterval(fetchDevices, 2000); // Poll for status updates
+    fetchStats();
+    setInterval(() => {
+        fetchDevices();
+        fetchStats();
+    }, 2000); // Poll for status updates
 });
+
+async function fetchStats() {
+    try {
+        const res = await fetch(`${API_URL}/stats`);
+        const stats = await res.json();
+
+        const connEl = document.getElementById('mqttConnStatus');
+        if (connEl) {
+            connEl.textContent = stats.mqtt_connected ? 'Connected' : 'Disconnected';
+            connEl.style.color = stats.mqtt_connected ? 'var(--success)' : 'var(--danger)';
+        }
+
+        // Update stats cards if they exist
+        const statsTotal = document.getElementById('statsTotal');
+        const statsRunning = document.getElementById('statsRunning');
+        if (statsTotal) statsTotal.textContent = stats.total_devices;
+        if (statsRunning) statsRunning.textContent = stats.running_devices;
+    } catch (e) {
+        console.error("Failed to fetch stats", e);
+    }
+}
 
 async function fetchDevices() {
     try {

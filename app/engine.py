@@ -57,6 +57,7 @@ class SimulationEngine:
         self.running = False
         self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self.mqtt_client.on_message = self.on_message
+        self.mqtt_client.on_connect = self.on_connect
         
         # Caches
         self.active_devices: Dict[str, Dict] = {} # UUID -> Device Dict
@@ -72,6 +73,25 @@ class SimulationEngine:
         # Manual Listener
         self.manual_topics: set[str] = set()
         self.manual_received_messages: List[Dict] = []
+
+    @property
+    def is_mqtt_connected(self) -> bool:
+        return self.mqtt_client.is_connected()
+
+    def on_connect(self, client, userdata, flags, rc, properties=None):
+        if rc == 0:
+            logger.info("Connected to MQTT Broker")
+            # Re-subscribe to all manual topics
+            for topic in self.manual_topics:
+                self.mqtt_client.subscribe(topic)
+                logger.info(f"Re-subscribed to manual topic: {topic}")
+            
+            # Re-subscribe to all device topics if any
+            for topic in self.topic_map.keys():
+                self.mqtt_client.subscribe(topic)
+                logger.info(f"Re-subscribed to device topic: {topic}")
+        else:
+            logger.error(f"MQTT Connection failed with code {rc}")
 
     def start_mqtt(self):
         try:
@@ -89,6 +109,8 @@ class SimulationEngine:
             payload = msg.payload.decode()
             timestamp = int(time.time())
             
+            logger.debug(f"Received MQTT message on {topic}: {payload}")
+            
             uuids = self.topic_map.get(topic, [])
             for uuid in uuids:
                 if uuid not in self.received_messages:
@@ -105,12 +127,19 @@ class SimulationEngine:
                     self.received_messages[uuid].pop(0)
 
             # Manual Listener capture
-            if any(mqtt.topic_matches_sub(sub, topic) for sub in self.manual_topics):
-                self.manual_received_messages.append({
-                    "timestamp": timestamp,
-                    "topic": topic,
-                    "payload": payload
-                })
+            matched = False
+            for sub in self.manual_topics:
+                if mqtt.topic_matches_sub(sub, topic):
+                    matched = True
+                    self.manual_received_messages.append({
+                        "timestamp": timestamp,
+                        "topic": topic,
+                        "payload": payload
+                    })
+                    break
+            
+            if matched:
+                logger.info(f"Manual Listener match found for topic {topic}")
                 # Keep last 50 manual messages
                 if len(self.manual_received_messages) > 50:
                     self.manual_received_messages.pop(0)

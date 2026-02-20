@@ -217,3 +217,11 @@ async def clear_listener_messages():
     engine.manual_received_messages.clear()
     return {"message": "Listener messages cleared"}
 
+@router.get("/stats")
+async def get_stats():
+    return {
+        "mqtt_connected": engine.is_mqtt_connected,
+        "total_devices": len(engine.active_devices),
+        "running_devices": sum(1 for d in engine.active_devices.values() if d.get('status') == 'RUNNING')
+    }
+
