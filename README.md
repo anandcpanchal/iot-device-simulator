@@ -17,6 +17,8 @@ A lightweight, highly configurable IoT device simulation platform designed to se
 - **👯 Device Duplication**: Clone existing device configurations with a single click.
 - **🐳 Docker Ready**: Fully containerized for easy deployment.
 
+![IoT Device Simulator UI](docs/images/ui-layout.png)
+
 ## 🛠️ Tech Stack
 
 - **Backend**: Python 3.13, FastAPI, `paho-mqtt`.
