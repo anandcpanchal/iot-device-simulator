@@ -25,3 +25,12 @@ class Device(BaseModel):
     csv_loop: bool = True
     params: List[DeviceParams] = []
     messages: List[dict] = [] # Received MQTT messages
+
+class MqttPublishRequest(BaseModel):
+    topic: str
+    payload: Union[str, dict]
+    qos: Literal[0, 1, 2] = 0
+    retain: bool = False
+
+class MqttSubscribeRequest(BaseModel):
+    topic: str

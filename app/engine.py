@@ -68,6 +68,10 @@ class SimulationEngine:
         # Listening
         self.topic_map: Dict[str, List[str]] = {} # Topic -> List of UUIDs
         self.received_messages: Dict[str, List[Dict]] = {} # UUID -> List of messages
+        
+        # Manual Listener
+        self.manual_topics: set[str] = set()
+        self.manual_received_messages: List[Dict] = []
 
     def start_mqtt(self):
         try:
@@ -99,6 +103,17 @@ class SimulationEngine:
                 # Keep last 5 messages
                 if len(self.received_messages[uuid]) > 5:
                     self.received_messages[uuid].pop(0)
+
+            # Manual Listener capture
+            if any(mqtt.topic_matches_sub(sub, topic) for sub in self.manual_topics):
+                self.manual_received_messages.append({
+                    "timestamp": timestamp,
+                    "topic": topic,
+                    "payload": payload
+                })
+                # Keep last 50 manual messages
+                if len(self.manual_received_messages) > 50:
+                    self.manual_received_messages.pop(0)
                     
         except Exception as e:
             logger.error(f"Error processing message: {e}")
@@ -256,5 +271,37 @@ class SimulationEngine:
             self.mqtt_client.publish(topic, json.dumps(payload), qos=device['qos'], retain=bool(device['retain']))
         except Exception as e:
             logger.error(f"Error publishing for {uuid}: {e}")
+
+    async def publish_manual(self, topic: str, payload: Any, qos: int = 0, retain: bool = False):
+        try:
+            if isinstance(payload, (dict, list)):
+                payload_str = json.dumps(payload)
+            else:
+                payload_str = str(payload)
+            
+            logger.info(f"Manual publish to {topic}: {payload_str}")
+            self.mqtt_client.publish(topic, payload_str, qos=qos, retain=retain)
+        except Exception as e:
+            logger.error(f"Error in manual publish: {e}")
+            raise e
+
+    async def subscribe_manual(self, topic: str):
+        try:
+            self.manual_topics.add(topic)
+            self.mqtt_client.subscribe(topic)
+            logger.info(f"Manual subscribe to {topic}")
+        except Exception as e:
+            logger.error(f"Error in manual subscribe: {e}")
+            raise e
+
+    async def unsubscribe_manual(self, topic: str):
+        try:
+            if topic in self.manual_topics:
+                self.manual_topics.remove(topic)
+                self.mqtt_client.unsubscribe(topic)
+                logger.info(f"Manual unsubscribe from {topic}")
+        except Exception as e:
+            logger.error(f"Error in manual unsubscribe: {e}")
+            raise e
 
 engine = SimulationEngine()

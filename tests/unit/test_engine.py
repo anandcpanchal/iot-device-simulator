@@ -99,4 +99,62 @@ async def test_engine_sync_devices(db, mock_mqtt):
             engine.active_devices[device['uuid']] = device
 
     assert 'uuid1' in engine.active_devices
+    assert 'uuid1' in engine.active_devices
     assert engine.active_devices['uuid1']['name'] == 'Dev1'
+
+@pytest.mark.asyncio
+async def test_engine_publish_manual(mock_mqtt):
+    engine = SimulationEngine()
+    
+    topic = "manual/test"
+    payload = {"status": "ok", "value": 123}
+    
+    await engine.publish_manual(topic, payload)
+    
+    assert mock_mqtt.publish.called
+    args, _ = mock_mqtt.publish.call_args
+    assert args[0] == topic
+    assert json.loads(args[1]) == payload
+
+@pytest.mark.asyncio
+async def test_engine_publish_manual_string(mock_mqtt):
+    engine = SimulationEngine()
+    
+    topic = "manual/test/string"
+    payload = "hello world"
+    
+    await engine.publish_manual(topic, payload)
+    
+    assert mock_mqtt.publish.called
+    args, _ = mock_mqtt.publish.call_args
+    assert args[0] == topic
+    assert args[1] == payload
+
+@pytest.mark.asyncio
+async def test_engine_manual_listener(mock_mqtt):
+    engine = SimulationEngine()
+    
+    # Subscribe to a topic
+    await engine.subscribe_manual("test/manual/#")
+    
+    # Simulate an incoming message
+    msg = MagicMock()
+    msg.topic = "test/manual/sub"
+    msg.payload = b'{"data": "hello"}'
+    
+    engine.on_message(None, None, msg)
+    
+    assert len(engine.manual_received_messages) == 1
+    assert engine.manual_received_messages[0]["topic"] == "test/manual/sub"
+    assert engine.manual_received_messages[0]["payload"] == '{"data": "hello"}'
+    
+    # Test unsubscribe
+    await engine.unsubscribe_manual("test/manual/#")
+    
+    # Message after unsubscribe should not be captured
+    msg2 = MagicMock()
+    msg2.topic = "test/manual/sub"
+    msg2.payload = b'ignore me'
+    engine.on_message(None, None, msg2)
+    
+    assert len(engine.manual_received_messages) == 1 # Still 1

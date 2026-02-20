@@ -305,3 +305,140 @@ async function stopAll() {
     await fetch(`${API_URL}/devices/stop-all`, { method: 'POST' });
     fetchDevices();
 }
+
+// MQTT Sidebar Logic
+function toggleSidebar(sidebarId) {
+    const sidebar = document.getElementById(sidebarId);
+    sidebar.classList.toggle('active');
+
+    // Start polling if listener sidebar is opened
+    if (sidebarId === 'listenerSidebar' && sidebar.classList.contains('active')) {
+        startListenerPolling();
+    } else if (sidebarId === 'listenerSidebar') {
+        stopListenerPolling();
+    }
+}
+
+let listenerPollInterval = null;
+let subscribedTopic = null;
+
+async function toggleSubscription() {
+    const topicInput = document.getElementById('listenerTopic');
+    const subscribeBtn = document.getElementById('subscribeBtn');
+    const topic = topicInput.value;
+
+    if (!topic) {
+        alert('Please enter a topic to subscribe');
+        return;
+    }
+
+    if (subscribedTopic) {
+        // Unsubscribe
+        try {
+            await fetch(`${API_URL}/mqtt/unsubscribe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: subscribedTopic })
+            });
+            subscribedTopic = null;
+            subscribeBtn.textContent = 'Subscribe';
+            topicInput.disabled = false;
+        } catch (e) {
+            console.error("Unsubscribe failed", e);
+        }
+    } else {
+        // Subscribe
+        try {
+            await fetch(`${API_URL}/mqtt/subscribe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: topic })
+            });
+            subscribedTopic = topic;
+            subscribeBtn.textContent = 'Unsubscribe';
+            topicInput.disabled = true;
+        } catch (e) {
+            console.error("Subscribe failed", e);
+        }
+    }
+}
+
+function startListenerPolling() {
+    if (listenerPollInterval) return;
+    fetchListenerMessages();
+    listenerPollInterval = setInterval(fetchListenerMessages, 1000);
+}
+
+function stopListenerPolling() {
+    if (listenerPollInterval) {
+        clearInterval(listenerPollInterval);
+        listenerPollInterval = null;
+    }
+}
+
+async function fetchListenerMessages() {
+    try {
+        const res = await fetch(`${API_URL}/mqtt/listener-messages`);
+        const messages = await res.json();
+        renderListenerMessages(messages);
+    } catch (e) {
+        console.error("Failed to fetch listener messages", e);
+    }
+}
+
+function renderListenerMessages(messages) {
+    const container = document.getElementById('listenerMessages');
+    container.innerHTML = messages.reverse().map(m => `
+        <div class="listener-msg">
+            <span class="time">[${new Date(m.timestamp * 1000).toLocaleTimeString()}]</span>
+            <span class="topic">${m.topic}:</span>
+            <span class="payload">${m.payload}</span>
+        </div>
+    `).join('');
+}
+
+async function clearListenerMessages() {
+    await fetch(`${API_URL}/mqtt/listener-messages`, { method: 'DELETE' });
+    fetchListenerMessages();
+}
+
+async function sendManualMqtt() {
+    const topic = document.getElementById('manualTopic').value;
+    const payloadStr = document.getElementById('manualPayload').value;
+
+    if (!topic) {
+        alert('Please enter a topic');
+        return;
+    }
+
+    let payload;
+    try {
+        payload = JSON.parse(payloadStr);
+    } catch (e) {
+        payload = payloadStr; // Send as string if not valid JSON
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/mqtt/publish`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                topic: topic,
+                payload: payload,
+                qos: 0,
+                retain: false
+            })
+        });
+
+        if (res.ok) {
+            alert('Message published successfully');
+            document.getElementById('manualPayload').value = '';
+        } else {
+            const err = await res.json();
+            alert(`Error: ${err.detail || 'Failed to publish'}`);
+        }
+    } catch (err) {
+        console.error(err);
+        alert(`Error: ${err.message}`);
+    }
+}

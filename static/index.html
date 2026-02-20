@@ -18,22 +18,68 @@
         </div>
     </header>
 
-    <main>
-        <div class="dashboard-stats">
-            <div class="stat-card">
-                <div class="stat-value" id="statsTotal">0</div>
-                <div class="stat-label">Total Devices</div>
+    <div class="app-layout">
+        <!-- Manual Publish Sidebar (Left) -->
+        <div class="sidebar left-sidebar" id="mqttSidebar">
+            <div class="sidebar-handle" onclick="toggleSidebar('mqttSidebar')">
+                <span class="handle-text">Manual Publish</span>
+                <span class="toggle-icon">▶</span>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="statsRunning">0</div>
-                <div class="stat-label">Running</div>
+            <div class="sidebar-content">
+                <div class="sidebar-header">Manual MQTT Publish</div>
+                <div class="topic-row">
+                    <input type="text" id="manualTopic" placeholder="Topic (e.g. commands/gate-01)">
+                </div>
+                <div class="payload-row">
+                    <textarea id="manualPayload" placeholder='Payload (JSON or string)'></textarea>
+                    <button class="primary" onclick="sendManualMqtt()"
+                        style="width: 100%; margin-top: 10px; border-radius: 0.375rem;">Send Message</button>
+                </div>
             </div>
         </div>
 
-        <div class="device-grid" id="deviceGrid">
-            <!-- Devices will be injected here -->
+        <main>
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Devices</div>
+                    <div class="stat-value" id="statsTotal">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Running</div>
+                    <div class="stat-value" id="statsRunning" style="color: var(--success);">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">MQTT Connection</div>
+                    <div class="stat-value" style="color: var(--success);">Connected</div>
+                </div>
+            </div>
+
+            <div class="device-grid" id="deviceGrid">
+                <!-- Devices will be rendered here -->
+            </div>
+        </main>
+
+        <!-- Topic Listener Sidebar (Right) -->
+        <div class="sidebar right-sidebar" id="listenerSidebar">
+            <div class="sidebar-handle" onclick="toggleSidebar('listenerSidebar')">
+                <span class="handle-text">Topic Listener</span>
+                <span class="toggle-icon">◀</span>
+            </div>
+            <div class="sidebar-content">
+                <div class="sidebar-header">MQTT Topic Listener</div>
+                <div class="topic-row">
+                    <input type="text" id="listenerTopic" placeholder="Topic (e.g. sensors/#)">
+                    <button class="primary" id="subscribeBtn" onclick="toggleSubscription()">Subscribe</button>
+                </div>
+                <div class="controls-row">
+                    <button onclick="clearListenerMessages()" style="flex: 1;">Clear Messages</button>
+                </div>
+                <div class="messages-display" id="listenerMessages">
+                    <!-- Messages will appear here -->
+                </div>
+            </div>
         </div>
-    </main>
+    </div>
 
     <!-- Add Device Modal -->
     <div class="modal" id="addDeviceModal">

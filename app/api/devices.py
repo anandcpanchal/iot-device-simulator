@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
-from app.models import Device, DeviceParams
+from app.models import Device, DeviceParams, MqttPublishRequest, MqttSubscribeRequest
 from app.database import get_db
 from app.engine import engine
 import aiosqlite
@@ -180,4 +180,40 @@ async def stop_all_devices(db: aiosqlite.Connection = Depends(get_db)):
     await db.execute("UPDATE devices SET status='STOPPED'")
     await db.commit()
     return {"message": "All devices stopped"}
+
+@router.post("/mqtt/publish")
+async def publish_manual_mqtt(request: MqttPublishRequest):
+    try:
+        await engine.publish_manual(request.topic, request.payload, request.qos, request.retain)
+        return {"message": "Message published successfully"}
+    except Exception as e:
+        logger.error(f"Manual Publish Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/mqtt/subscribe")
+async def subscribe_mqtt(request: MqttSubscribeRequest):
+    try:
+        await engine.subscribe_manual(request.topic)
+        return {"message": f"Subscribed to {request.topic}"}
+    except Exception as e:
+        logger.error(f"Manual Subscribe Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/mqtt/unsubscribe")
+async def unsubscribe_mqtt(request: MqttSubscribeRequest):
+    try:
+        await engine.unsubscribe_manual(request.topic)
+        return {"message": f"Unsubscribed from {request.topic}"}
+    except Exception as e:
+        logger.error(f"Manual Unsubscribe Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/mqtt/listener-messages")
+async def get_listener_messages():
+    return engine.manual_received_messages
+
+@router.delete("/mqtt/listener-messages")
+async def clear_listener_messages():
+    engine.manual_received_messages.clear()
+    return {"message": "Listener messages cleared"}
 
